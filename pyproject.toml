@@ -12,6 +12,7 @@ dependencies = [
     "numpy>=2.2.4",
     "openai>=1.72.0",
     "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0",
     "python-dotenv>=1.1.0",
     "requests>=2.32.0",
     "tavily-python>=0.5.4",
