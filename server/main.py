@@ -18,7 +18,7 @@ load_dotenv()
 mcp = FastMCP("mcp-server")
 client = TavilyClient(os.getenv("TAVILY_API_KEY"))
 content_creator = SocialContentCreator()
-github_tool = GitHubTool()
+github_tool = GitHubTool(github_token=os.getenv("GITHUB_TOKEN"))
 
 @mcp.tool()
 def web_search(query: str) -> str:
@@ -66,6 +66,11 @@ def github_get_file_content(owner: str, repo: str, file_path: str, branch: str =
 def github_list_files(owner: str, repo: str, path: str = "", branch: str = "main") -> str:
     """List files and directories in a GitHub repository path"""
     return github_tool.list_repository_files(owner, repo, path, branch)
+
+@mcp.tool()
+def github_auth_status() -> str:
+    """Check GitHub authentication status and rate limits"""
+    return github_tool.get_authentication_status()
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")

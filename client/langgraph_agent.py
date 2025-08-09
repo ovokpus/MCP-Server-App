@@ -197,13 +197,13 @@ async def main():
         await agent.run_examples()
         
         # Interactive mode (uncomment for live testing)
-        # print("\n🎮 Interactive mode (type 'quit' to exit):")
-        # while True:
-        #     user_input = input("\nYou: ").strip()
-        #     if user_input.lower() in ['quit', 'exit', 'bye']:
-        #         break
-        #     if user_input:
-        #         await agent.chat(user_input)
+        print("\n🎮 Interactive mode (type 'quit' to exit):")
+        while True:
+            user_input = input("\nYou: ").strip()
+            if user_input.lower() in ['quit', 'exit', 'bye']:
+                break
+            if user_input:
+                await agent.chat(user_input)
         
     except KeyboardInterrupt:
         print("\n👋 Goodbye!")

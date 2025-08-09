@@ -122,6 +122,7 @@ AIE7-MCP-Session/
 - **OpenAI API Key** (required for LangGraph agent)
 - **Tavily API Key** (required for web search)
 - **Unsplash API Key** (optional - falls back to Lorem Picsum)
+- **GitHub Token** (optional - enables private repository access)
 
 ### Installation Steps
 
@@ -138,6 +139,7 @@ Edit `.env` file:
 OPENAI_API_KEY=your_openai_key_here     # Required
 TAVILY_API_KEY=your_tavily_key_here     # Required  
 UNSPLASH_ACCESS_KEY=your_key_here       # Optional
+GITHUB_TOKEN=ghp_your_token_here        # Optional
 ```
 
 **3. Install Dependencies**
@@ -307,10 +309,32 @@ TAVILY_API_KEY=your_tavily_api_key_here
 # If not provided, the system will use Lorem Picsum as fallback
 UNSPLASH_ACCESS_KEY=your_unsplash_access_key_here
 
+# OPTIONAL: GitHub Personal Access Token for private repository access
+# Create at: https://github.com/settings/tokens
+# Scopes needed: repo (for private repos), public_repo (for public repos)
+GITHUB_TOKEN=ghp_your_github_personal_access_token_here
+
 # OPTIONAL: LangChain API Key for LangSmith tracing/monitoring
 # Only needed if you want to use LangSmith for debugging/monitoring
 LANGCHAIN_API_KEY=your_langchain_api_key_here
 ```
+
+### 🔐 GitHub Token Setup (Optional)
+
+To access your **private repositories**, create a GitHub Personal Access Token:
+
+1. **Go to**: https://github.com/settings/tokens
+2. **Click**: "Generate new token" → "Generate new token (classic)"
+3. **Set scopes**:
+   - ✅ `repo` (for private repositories)
+   - ✅ `public_repo` (for public repositories)
+4. **Copy token** and add to `.env`:
+   ```bash
+   GITHUB_TOKEN=ghp_your_personal_access_token_here
+   ```
+
+**Without a token**: Only public repositories are accessible  
+**With a token**: Full access to your private and public repositories
 
 ### MCP Configuration for Cursor
 

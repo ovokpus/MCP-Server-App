@@ -14,14 +14,67 @@ import base64
 class GitHubTool:
     """GitHub integration tool for repository operations."""
     
-    def __init__(self):
+    def __init__(self, github_token: Optional[str] = None):
         self.base_url = "https://api.github.com"
         self.session = requests.Session()
+        
         # Set a user agent for GitHub API requests
-        self.session.headers.update({
+        headers = {
             "User-Agent": "MCP-Server-App/1.0",
             "Accept": "application/vnd.github.v3+json"
-        })
+        }
+        
+        # Add authentication if token is provided
+        if github_token:
+            headers["Authorization"] = f"token {github_token}"
+            self.authenticated = True
+        else:
+            self.authenticated = False
+            
+        self.session.headers.update(headers)
+    
+    def get_authentication_status(self) -> str:
+        """
+        Check authentication status and rate limits.
+        
+        Returns:
+            Status information about authentication and rate limits
+        """
+        try:
+            url = f"{self.base_url}/rate_limit"
+            response = self.session.get(url)
+            response.raise_for_status()
+            
+            data = response.json()
+            rate_limit = data.get("rate", {})
+            
+            if self.authenticated:
+                # Get user info
+                user_url = f"{self.base_url}/user"
+                user_response = self.session.get(user_url)
+                if user_response.status_code == 200:
+                    user_data = user_response.json()
+                    username = user_data.get("login", "Unknown")
+                    user_type = user_data.get("type", "User")
+                    
+                    result = f"🔐 **GitHub Authentication Status: AUTHENTICATED**\n"
+                    result += f"👤 User: {username} ({user_type})\n"
+                    result += f"🔑 Access: Private & Public repositories\n"
+                else:
+                    result = f"🔐 **GitHub Authentication Status: TOKEN PROVIDED**\n"
+                    result += f"🔑 Access: Should have private & public repositories\n"
+            else:
+                result = f"🔓 **GitHub Authentication Status: NOT AUTHENTICATED**\n"
+                result += f"🔑 Access: Public repositories only\n"
+            
+            result += f"\n📊 **Rate Limits:**\n"
+            result += f"   Remaining: {rate_limit.get('remaining', 'Unknown')}/{rate_limit.get('limit', 'Unknown')}\n"
+            result += f"   Reset time: {rate_limit.get('reset', 'Unknown')}\n"
+            
+            return result
+            
+        except Exception as e:
+            return f"❌ Error checking authentication status: {str(e)}"
     
     def search_repositories(self, query: str, limit: int = 5) -> str:
         """
@@ -38,10 +91,13 @@ class GitHubTool:
             url = f"{self.base_url}/search/repositories"
             params = {
                 "q": query,
-                "sort": "stars",
+                "sort": "stars", 
                 "order": "desc",
                 "per_page": min(limit, 10)  # GitHub API limit
             }
+            
+            # Add private repo access note for authenticated users
+            auth_note = " (including private repos)" if self.authenticated else " (public repos only)"
             
             response = self.session.get(url, params=params)
             response.raise_for_status()
@@ -50,9 +106,9 @@ class GitHubTool:
             repositories = data.get("items", [])
             
             if not repositories:
-                return f"No repositories found for query: '{query}'"
+                return f"No repositories found for query: '{query}'{auth_note}"
             
-            result = f"🔍 GitHub Repository Search Results for '{query}':\n\n"
+            result = f"🔍 GitHub Repository Search Results for '{query}'{auth_note}:\n\n"
             
             for i, repo in enumerate(repositories, 1):
                 result += f"{i}. **{repo['full_name']}**\n"

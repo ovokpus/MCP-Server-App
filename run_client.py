@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Main entry point for running the LangGraph client examples.
+Main entry point for running the LangGraph client examples with GitHub integration.
 
-This script provides a convenient way to run the LangGraph client from the project root.
+This script provides a convenient way to run the LangGraph client from the project root,
+now featuring GitHub repository search and file browsing capabilities.
 """
 
 import sys
@@ -17,9 +18,10 @@ from examples.example_langgraph_usage import interactive_mode, quick_examples, c
 
 def main():
     print("🚀 LangGraph + MCP Integration Examples")
+    print("🐙 Now featuring GitHub repository search and file browsing!")
     print("Choose what to run:")
-    print("1. Quick Examples")
-    print("2. Interactive Mode") 
+    print("1. Quick Examples (includes GitHub demos)")
+    print("2. Interactive Mode (try GitHub commands)") 
     print("3. Compare ReAct vs StateGraph")
     
     choice = input("\nEnter choice (1-3): ").strip()

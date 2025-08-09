@@ -1,8 +1,13 @@
 """
-Simple example showing how to use the LangGraph MCP Agent
+LangGraph MCP Agent Examples with GitHub Integration
 
-This script demonstrates basic usage of the MCPLangGraphAgent
-with your custom MCP server tools.
+This script demonstrates comprehensive usage of the MCPLangGraphAgent
+with all available MCP server tools including:
+- Dice rolling with custom notation
+- Web search via Tavily API
+- Social media content creation
+- GitHub repository search and file browsing
+- Presentation and quote generation
 """
 
 import asyncio
@@ -23,10 +28,13 @@ async def quick_examples():
     agent = MCPLangGraphAgent()
     
     try:
-        # Examples that combine multiple tools
+        # Examples that combine multiple tools including new GitHub functionality
         examples = [
             "Roll a d20 for me and tell me what it means for my luck today",
+            "Search for popular Python FastAPI repositories on GitHub and tell me about the top result",
+            "Look at the file structure of microsoft/vscode repository and describe its main components",
             "Search for recent AI news and create a professional social media post about it",
+            "Find GitHub repositories for 'machine learning python' and summarize the top 3",
             "Create a quote card about technology and innovation",
             "I need a presentation slide image about 'digital transformation' - can you help?",
         ]
@@ -54,6 +62,9 @@ async def interactive_mode():
     print("  - 'Search for Python news'") 
     print("  - 'Create a LinkedIn post about AI'")
     print("  - 'Get me slide images for machine learning'")
+    print("  - 'Search for React repositories on GitHub'")
+    print("  - 'Look at the README of facebook/react repository'")
+    print("  - 'Find repositories for user:microsoft and tell me about them'")
     print("Type 'quit' to exit.\n")
     
     agent = MCPLangGraphAgent()
@@ -93,7 +104,7 @@ async def compare_react_vs_stategraph():
     try:
         await agent.initialize()
         
-        task = "Roll 2d10, search for AI news, and create a social post about it"
+        task = "Search for popular Python repositories on GitHub, roll 2d10, and create a social post combining the results"
         
         print("🔹 Using ReAct Agent:")
         await agent.chat(task)
@@ -109,9 +120,10 @@ async def compare_react_vs_stategraph():
 
 if __name__ == "__main__":
     print("🚀 LangGraph + MCP Integration Examples")
+    print("🐙 Now featuring GitHub repository search and file browsing!")
     print("Choose what to run:")
-    print("1. Quick Examples")
-    print("2. Interactive Mode") 
+    print("1. Quick Examples (includes GitHub demos)")
+    print("2. Interactive Mode (try GitHub commands)") 
     print("3. Compare ReAct vs StateGraph")
     
     choice = input("\nEnter choice (1-3): ").strip()

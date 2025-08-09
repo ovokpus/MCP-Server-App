@@ -40,7 +40,8 @@ class TestMCPServer:
             "github_search_repositories",
             "github_get_repository_info", 
             "github_get_file_content",
-            "github_list_files"
+            "github_list_files",
+            "github_auth_status"
         ]
         
         for tool in expected_tools:
