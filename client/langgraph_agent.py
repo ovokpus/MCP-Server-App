@@ -40,9 +40,9 @@ class MCPLangGraphAgent:
         if not self.openai_api_key:
             raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY env var or pass it directly.")
         
-        # Get the current directory and construct server path
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.server_path = server_path or os.path.join(current_dir, "server.py")
+        # Get the project root directory and construct server path
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.server_path = server_path or os.path.join(current_dir, "server", "main.py")
         
         # Initialize the language model
         self.llm = ChatOpenAI(
@@ -55,7 +55,7 @@ class MCPLangGraphAgent:
         self.mcp_config = {
             "my-mcp-server": {
                 "command": "uv",
-                "args": ["--directory", current_dir, "run", "server.py"],
+                "args": ["--directory", current_dir, "run", "run_server.py"],
                 "transport": "stdio",
             }
         }

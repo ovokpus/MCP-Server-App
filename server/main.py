@@ -2,8 +2,14 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from tavily import TavilyClient
 import os
-from dice_roller import DiceRoller
-from social_content_creator import SocialContentCreator
+try:
+    # Try relative imports first (when run as module)
+    from .dice_roller import DiceRoller
+    from .social_content_creator import SocialContentCreator
+except ImportError:
+    # Fall back to absolute imports (when run directly)
+    from dice_roller import DiceRoller
+    from social_content_creator import SocialContentCreator
 
 load_dotenv()
 

@@ -6,7 +6,11 @@ with your custom MCP server tools.
 """
 
 import asyncio
-from langgraph_agent import MCPLangGraphAgent
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from client.langgraph_agent import MCPLangGraphAgent
 
 
 async def quick_examples():
