@@ -36,7 +36,11 @@ class TestMCPServer:
             "roll_dice", 
             "create_social_post", 
             "get_slide_image", 
-            "create_quote_card"
+            "create_quote_card",
+            "github_search_repositories",
+            "github_get_repository_info", 
+            "github_get_file_content",
+            "github_list_files"
         ]
         
         for tool in expected_tools:
@@ -94,6 +98,40 @@ class TestMCPServer:
         assert result is not None, "Multiple dice rolls returned None"
         _, metadata = result
         assert 'result' in metadata, "No 'result' key in metadata for multiple rolls"
+    
+    @pytest.mark.asyncio
+    async def test_github_repository_search(self):
+        """Test GitHub repository search functionality."""
+        result = await server_main.mcp.call_tool("github_search_repositories", {
+            "query": "python", 
+            "limit": 2
+        })
+        
+        assert result is not None, "GitHub search returned None"
+        _, metadata = result
+        assert 'result' in metadata, "No 'result' key in metadata for GitHub search"
+        
+        # Check that the result contains expected GitHub search elements
+        search_result = metadata['result']
+        assert "GitHub Repository Search Results" in search_result, "Missing search results header"
+        assert "Stars:" in search_result, "Missing star count in results"
+    
+    @pytest.mark.asyncio
+    async def test_github_repository_info(self):
+        """Test GitHub repository info functionality."""
+        result = await server_main.mcp.call_tool("github_get_repository_info", {
+            "owner": "octocat", 
+            "repo": "Hello-World"
+        })
+        
+        assert result is not None, "GitHub repo info returned None"
+        _, metadata = result
+        assert 'result' in metadata, "No 'result' key in metadata for GitHub repo info"
+        
+        # Check that the result contains expected repository info
+        repo_info = metadata['result']
+        assert "Repository Information" in repo_info, "Missing repo info header"
+        assert "octocat/Hello-World" in repo_info, "Missing repository name"
 
 
 # Backwards compatibility: keep the main function for direct execution

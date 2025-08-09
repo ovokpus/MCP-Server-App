@@ -25,12 +25,14 @@ graph TD
             G["🎲 Dice Roller<br/>Custom Notation Parser"]
             H["🔍 Web Search<br/>Tavily API Integration"]
             I["📱 Social Creator<br/>Unsplash + Quotable APIs"]
+            M["🐙 GitHub Tools<br/>Repository & File Access"]
         end
         
         subgraph "External APIs"
             J["🌐 Tavily Search API<br/>Real-time Web Data"]
             K["📸 Unsplash API<br/>High-Quality Images"]
             L["💭 Quotable API<br/>Inspirational Quotes"]
+            N["🔗 GitHub API<br/>Public Repository Data"]
         end
     end
     
@@ -43,9 +45,11 @@ graph TD
     F --> G
     F --> H
     F --> I
+    F --> M
     H --> J
     I --> K
     I --> L
+    M --> N
     
     %% Styling
     classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
@@ -55,8 +59,8 @@ graph TD
     
     class A,B,C clientStyle
     class D,E mcpStyle
-    class F,G,H,I serverStyle
-    class J,K,L apiStyle
+    class F,G,H,I,M serverStyle
+    class J,K,L,N apiStyle
 ```
 
 ### Architecture Components
@@ -75,6 +79,9 @@ Your AI agents can now:
 - 🎨 **Create social media posts** with images and inspirational text
 - 🖼️ **Find presentation images** for slides and presentations
 - 💬 **Generate quote cards** with backgrounds and motivational content
+- 🐙 **Search GitHub repositories** by query with detailed information
+- 📁 **Browse GitHub files** and get repository contents
+- 📄 **Read GitHub files** directly from any public repository
 
 ## 🏗️ Project Structure
 
@@ -85,7 +92,8 @@ AIE7-MCP-Session/
 │   ├── main.py              # Main MCP server entry point
 │   ├── dice_roller.py       # Dice rolling tool implementation
 │   ├── dice_roller_numpy.py # NumPy-based dice roller variant
-│   └── social_content_creator.py # Social media content creation tools
+│   ├── social_content_creator.py # Social media content creation tools
+│   └── github_tool.py       # GitHub API integration tools
 │
 ├── 📁 client/                # Client Components  
 │   ├── __init__.py          # Client module initialization
@@ -374,9 +382,9 @@ uv run pytest tests/ --cov=server --cov-report=term-missing
 
 ### Test Coverage
 Our comprehensive test suite includes:
-- **5 tests** in `test_server.py` - Server functionality and tool registration
+- **7 tests** in `test_server.py` - Server functionality, tool registration, and GitHub tools
 - **3 tests** in `test_mcp_integration.py` - LangGraph integration tests  
-- **Total: 8 tests** covering MCP server, tools, and client integration
+- **Total: 10 tests** covering MCP server, tools, GitHub API integration, and client integration
 
 ### Manual Testing
 
@@ -506,6 +514,12 @@ uv run run_client.py
 - Automated social media campaigns
 - Blog post research and imagery
 - Quote cards for inspiration
+
+### 🐙 Developer Workflow
+- Search GitHub repositories for inspiration
+- Browse repository files and structure
+- Read documentation and code examples
+- Analyze open-source project patterns
 - Presentation slide generation
 
 ## 🔍 Troubleshooting
