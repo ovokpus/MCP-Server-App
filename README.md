@@ -8,16 +8,55 @@ This project demonstrates a comprehensive **Model Context Protocol (MCP) server*
 
 ```mermaid
 graph TD
-    A[User Input] --> B[LangGraph Agent]
-    B --> C[MultiServerMCPClient]
-    C --> D[MCP Server]
-    D --> E[Web Search Tool]
-    D --> F[Dice Roller Tool]  
-    D --> G[Social Media Tools]
-    E --> H[Tavily API]
-    F --> I[Local Logic]
-    G --> J[Unsplash API]
-    G --> K[Quotable API]
+    subgraph "🚀 MCP Server App Architecture"
+        subgraph "Client Layer"
+            A["🤖 LangGraph Agent<br/>ChatOpenAI + ReAct"] 
+            B["💻 Interactive Examples<br/>Quick Demo Mode"]
+            C["🧪 Pytest Test Suite<br/>8 Comprehensive Tests"]
+        end
+        
+        subgraph "MCP Integration"
+            D["🔌 MultiServerMCPClient<br/>langchain-mcp-adapters"]
+            E["📡 STDIO Transport<br/>Process Communication"]
+        end
+        
+        subgraph "Server Layer"
+            F["⚡ FastMCP Server<br/>Python MCP Framework"]
+            G["🎲 Dice Roller<br/>Custom Notation Parser"]
+            H["🔍 Web Search<br/>Tavily API Integration"]
+            I["📱 Social Creator<br/>Unsplash + Quotable APIs"]
+        end
+        
+        subgraph "External APIs"
+            J["🌐 Tavily Search API<br/>Real-time Web Data"]
+            K["📸 Unsplash API<br/>High-Quality Images"]
+            L["💭 Quotable API<br/>Inspirational Quotes"]
+        end
+    end
+    
+    %% Connections
+    A --> D
+    B --> D
+    C --> F
+    D --> E
+    E --> F
+    F --> G
+    F --> H
+    F --> I
+    H --> J
+    I --> K
+    I --> L
+    
+    %% Styling
+    classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef mcpStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef serverStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px,color:#000
+    classDef apiStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    
+    class A,B,C clientStyle
+    class D,E mcpStyle
+    class F,G,H,I serverStyle
+    class J,K,L apiStyle
 ```
 
 ### Architecture Components
@@ -185,6 +224,63 @@ result = await agent.chat_with_state_graph(
     "Research machine learning trends and prepare presentation materials"
 )
 ```
+
+## 📡 STDIO Transport Communication
+
+Our MCP Server App uses **STDIO transport** for seamless process-to-process communication between the LangGraph agent and FastMCP server.
+
+### 🔧 **1. Server Side - FastMCP Server**
+**Files: `server/main.py` and `run_server.py`**
+```python
+# server/main.py (line 48)
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
+
+# run_server.py (line 20)
+main.mcp.run(transport="stdio")
+```
+- The **FastMCP server** runs with STDIO transport
+- This means it communicates via **standard input/output** rather than HTTP
+- Perfect for process-to-process communication
+
+### 🔌 **2. Client Side - MCP Configuration**
+**File: `client/langgraph_agent.py` (lines 55-61)**
+```python
+self.mcp_config = {
+    "my-mcp-server": {
+        "command": "uv",
+        "args": ["--directory", current_dir, "run", "run_server.py"],
+        "transport": "stdio",  # ← STDIO specified here
+    }
+}
+```
+- The **MultiServerMCPClient** is configured to use STDIO transport
+- It spawns the server process (`uv run run_server.py`)
+- Communicates via **stdin/stdout pipes**
+
+### 🌊 **3. How STDIO Transport Works**
+
+```
+┌─────────────────┐    STDIO     ┌─────────────────┐
+│  LangGraph      │◄────────────►│   FastMCP       │
+│  Agent          │   (pipes)    │   Server        │
+│  (Client)       │              │   (Process)     │
+└─────────────────┘              └─────────────────┘
+```
+
+**Process:**
+1. **Client** (LangGraph agent) starts the **server process** 
+2. **STDIO pipes** connect the two processes
+3. **JSON-RPC messages** flow over stdin/stdout
+4. Server responds to tool calls via the same pipes
+
+### 🎯 **Why STDIO?**
+- **Process isolation**: Server runs in separate process
+- **Clean communication**: No network ports or HTTP servers needed
+- **MCP standard**: Official MCP protocol transport method
+- **Development friendly**: Easy to debug and test locally
+
+The STDIO transport is the backbone that enables our LangGraph agent to seamlessly communicate with the FastMCP server!
 
 ## 🔧 Configuration
 
