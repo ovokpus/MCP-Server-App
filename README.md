@@ -259,18 +259,28 @@ Innovation distinguishes between a leader and a follower. - Steve Jobs
 
 ## 🧪 Testing
 
-### Run All Tests
+### Run All Tests with Pytest
 
 ```bash
-# Integration tests
-uv run tests/test_mcp_integration.py
+# Run all tests (recommended)
+uv run pytest tests/ -v
 
-# Basic server tests  
-uv run tests/test_server.py
+# Run specific test file
+uv run pytest tests/test_server.py -v
+uv run pytest tests/test_mcp_integration.py -v
 
-# All tests with pytest
-pytest tests/
+# Run specific test method
+uv run pytest tests/test_server.py::TestMCPServer::test_dice_rolling_tool -v
+
+# Run with coverage (if available)
+uv run pytest tests/ --cov=server --cov-report=term-missing
 ```
+
+### Test Coverage
+Our comprehensive test suite includes:
+- **5 tests** in `test_server.py` - Server functionality and tool registration
+- **3 tests** in `test_mcp_integration.py` - LangGraph integration tests  
+- **Total: 8 tests** covering MCP server, tools, and client integration
 
 ### Manual Testing
 
@@ -283,6 +293,9 @@ uv run run_client.py
 
 # Test specific functionality
 uv run examples/example_langgraph_usage.py
+
+# Legacy test execution (backwards compatible)
+uv run tests/test_server.py
 ```
 
 ## 🛠️ Development
