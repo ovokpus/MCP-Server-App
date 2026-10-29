@@ -10,3 +10,7 @@ wheels/
 .venv
 
 .env
+
+# Frontend build output
+web/node_modules
+web/.next

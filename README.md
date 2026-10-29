@@ -1,666 +1,380 @@
 <p align="center"><img src="assets/banner.jpg" alt="Brass hub connector with braided cables fanning out to many plugs" width="100%"></p>
 
-# 🚀 MCP Server App
+# MCP Server App
 
-## <h1 align="center">Complete MCP Server with LangGraph Agent Integration</h1>
+A Model Context Protocol server, a LangGraph agent that can call it, and a browser chat so you can use both without a terminal.
 
-This project demonstrates a comprehensive **Model Context Protocol (MCP) server** with **LangGraph agent integration**, showcasing how to build powerful AI workflows that can interact with custom tools and external APIs.
+Roll dice, search the web, draft a social post, pull a slide image, mint a quote card, or browse public GitHub repos. With an OpenAI key, a ReAct agent decides which tools to call. Without one, the same UI still runs the tools it can recognize (dice works immediately).
 
-## 🔄 Architecture Overview
+## Architecture
+
+Two processes, one conversation.
 
 ```mermaid
-graph TD
-    subgraph "🚀 MCP Server App Architecture"
-        subgraph "Client Layer"
-            A["🤖 LangGraph Agent<br/>ChatOpenAI + ReAct"] 
-            B["💻 Interactive Examples<br/>Quick Demo Mode"]
-            C["🧪 Pytest Test Suite<br/>8 Comprehensive Tests"]
-        end
-        
-        subgraph "MCP Integration"
-            D["🔌 MultiServerMCPClient<br/>langchain-mcp-adapters"]
-            E["📡 STDIO Transport<br/>Process Communication"]
-        end
-        
-        subgraph "Server Layer"
-            F["⚡ FastMCP Server<br/>Python MCP Framework"]
-            G["🎲 Dice Roller<br/>Custom Notation Parser"]
-            H["🔍 Web Search<br/>Tavily API Integration"]
-            I["📱 Social Creator<br/>Unsplash + Quotable APIs"]
-            M["🐙 GitHub Tools<br/>Repository & File Access"]
-        end
-        
-        subgraph "External APIs"
-            J["🌐 Tavily Search API<br/>Real-time Web Data"]
-            K["📸 Unsplash API<br/>High-Quality Images"]
-            L["💭 Quotable API<br/>Inspirational Quotes"]
-            N["🔗 GitHub API<br/>Public Repository Data"]
-        end
-    end
-    
-    %% Connections
-    A --> D
-    B --> D
-    C --> F
-    D --> E
-    E --> F
-    F --> G
-    F --> H
-    F --> I
-    F --> M
-    H --> J
-    I --> K
-    I --> L
-    M --> N
-    
-    %% Styling
-    classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
-    classDef mcpStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
-    classDef serverStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px,color:#000
-    classDef apiStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
-    
-    class A,B,C clientStyle
-    class D,E mcpStyle
-    class F,G,H,I,M serverStyle
-    class J,K,L,N apiStyle
+flowchart LR
+  subgraph browser [Browser]
+    UI["Next.js chat"]
+  end
+  subgraph webbox [web container :3000]
+    Proxy["/backend proxy"]
+  end
+  subgraph apibox [api container :8000]
+    API["FastAPI"]
+    Local["Local tool router"]
+    Agent["LangGraph agent"]
+    Child["MCP server over stdio"]
+  end
+  subgraph tools [Tools]
+    Dice["Dice"]
+    Web["Web search"]
+    Social["Social, slides, quotes"]
+    Hub["GitHub"]
+  end
+  subgraph outside [External APIs]
+    OpenAI["OpenAI"]
+    Tavily["Tavily"]
+    Pics["Unsplash or Picsum"]
+    GitHub["GitHub API"]
+  end
+
+  UI --> Proxy --> API
+  API --> Local
+  API --> Agent
+  Local --> Dice
+  Local --> Web
+  Local --> Social
+  Local --> Hub
+  Agent --> Child
+  Agent --> OpenAI
+  Child --> Dice
+  Child --> Web
+  Child --> Social
+  Child --> Hub
+  Web --> Tavily
+  Social --> Pics
+  Hub --> GitHub
 ```
 
-### Architecture Components
+The browser never talks to OpenAI or to the MCP server directly. It calls the Next.js app, which proxies to FastAPI. FastAPI either routes the message itself (local mode) or hands it to the LangGraph agent. The agent spawns `run_server.py` and speaks MCP over stdin/stdout, which is the same transport Cursor uses.
 
-1. **MCPLangGraphAgent**: Main agent class that connects LangGraph to MCP
-2. **MultiServerMCPClient**: Handles communication with MCP servers
-3. **ReAct Agent**: Uses reasoning and acting to solve problems
-4. **StateGraph**: More complex workflow management
-5. **MCP Tools**: Your custom tools (dice, web search, content creation)
+### What happens when you hit Send
 
-## 🎯 What This Project Enables
+```mermaid
+sequenceDiagram
+  participant Person
+  participant Next as Next.js /backend
+  participant API as FastAPI
+  participant Backend as Local router or LangGraph
+  participant MCP as MCP tools
 
-Your AI agents can now:
-- 🎲 **Roll dice** using natural language and D&D notation
-- 🔍 **Search the web** for real-time information via Tavily API
-- 🎨 **Create social media posts** with images and inspirational text
-- 🖼️ **Find presentation images** for slides and presentations
-- 💬 **Generate quote cards** with backgrounds and motivational content
-- 🐙 **Search GitHub repositories** by query with detailed information
-- 📁 **Browse GitHub files** and get repository contents
-- 📄 **Read GitHub files** directly from any public repository
-
-## 🏗️ Project Structure
-
-```
-AIE7-MCP-Session/
-├── 📁 server/                 # MCP Server Components
-│   ├── __init__.py           # Server module initialization
-│   ├── main.py              # Main MCP server entry point
-│   ├── dice_roller.py       # Dice rolling tool implementation
-│   ├── dice_roller_numpy.py # NumPy-based dice roller variant
-│   ├── social_content_creator.py # Social media content creation tools
-│   └── github_tool.py       # GitHub API integration tools
-│
-├── 📁 client/                # Client Components  
-│   ├── __init__.py          # Client module initialization
-│   └── langgraph_agent.py   # LangGraph agent implementation
-│
-├── 📁 tests/                 # Test Files
-│   ├── __init__.py          # Tests module initialization
-│   ├── test_server.py       # Basic MCP server tests
-│   └── test_mcp_integration.py # Integration tests
-│
-├── 📁 examples/              # Usage Examples
-│   ├── __init__.py          # Examples module initialization
-│   └── example_langgraph_usage.py # LangGraph usage examples
-│
-├── 📄 run_server.py         # Convenient server entry point
-├── 📄 run_client.py         # Convenient client entry point
-├── 📄 pyproject.toml        # Project dependencies
-├── 📄 .env.sample           # Environment variables template
-└── 📄 README.md             # This documentation
+  Person->>Next: POST /backend/api/chat
+  Next->>API: POST /api/chat
+  API->>API: Load session history
+  API->>Backend: chat(message, history)
+  alt AGENT_MODE=auto and OPENAI_API_KEY is real
+    Backend->>MCP: stdio tool calls chosen by the model
+  else No usable OpenAI key
+    Backend->>MCP: in-process calls from the phrase router
+  end
+  MCP-->>Backend: tool text
+  Backend-->>API: reply and tool traces
+  API->>API: Append the turn to the session
+  API-->>Next: JSON
+  Next-->>Person: Render the reply and traces
 ```
 
-## 🚀 Quick Start Guide
+Local mode is a small phrase router, not a model. "Roll 2d6" calls `roll_dice`. "Create a quote card about shipping" calls `create_quote_card`. Anything it does not recognize gets a short explanation of what to try. Set a real `OPENAI_API_KEY` and the LangGraph agent takes over, history included.
 
-### Prerequisites
-- **Python 3.13+** 
-- **OpenAI API Key** (required for LangGraph agent)
-- **Tavily API Key** (required for web search)
-- **Unsplash API Key** (optional - falls back to Lorem Picsum)
-- **GitHub Token** (optional - enables private repository access)
+Direct tool runs from the sidebar skip the model entirely. `POST /api/tools/call` executes one registered tool and returns the text.
 
-### Installation Steps
+## What you can ask for
 
-**1. Clone & Setup**
+| Tool | What it does | Something to type |
+| --- | --- | --- |
+| `roll_dice` | D&D-style notation, including keep-highest (`2d20k1`) | Roll 2d6 |
+| `web_search` | Live search through Tavily | Search the web for AI news |
+| `create_social_post` | Post copy plus an image | Create a LinkedIn post about Python |
+| `get_slide_image` | A presentation-sized image | Get a slide image about robots |
+| `create_quote_card` | A quote and a background | Create a quote card about shipping |
+| `github_search_repositories` | Search public GitHub repos | Search GitHub for langgraph |
+| `github_get_repository_info` | Details for `owner/repo` | Used by the agent |
+| `github_get_file_content` | Read a file from a repo | Used by the agent |
+| `github_list_files` | List a directory in a repo | Used by the agent |
+| `github_auth_status` | Token and rate-limit status | Used by the agent |
+
+Web search needs `TAVILY_API_KEY`. Image tools use Unsplash when `UNSPLASH_ACCESS_KEY` is set, and Lorem Picsum otherwise. GitHub's public API works without a token. A token raises the rate limit and unlocks private repos.
+
+## Project layout
+
+```
+.
+├── server/                  # FastMCP tools
+│   ├── main.py              # Tool registration and stdio entry
+│   ├── dice_roller.py
+│   ├── social_content_creator.py
+│   └── github_tool.py
+├── client/
+│   └── langgraph_agent.py   # ReAct agent, StateGraph, stdio config
+├── api/                     # Thin FastAPI layer for the browser
+│   ├── app.py               # Routes
+│   ├── backends.py          # Local router and OpenAI agent
+│   ├── routing.py           # Phrase router used when no model is configured
+│   ├── catalog.py           # In-process tool calls
+│   └── sessions.py          # In-memory transcripts
+├── web/                     # Next.js chat UI
+│   ├── app/                 # Page, styles, /backend proxy
+│   └── components/          # Chat and tool runner
+├── tests/                   # Pytest, including API and stdio coverage
+├── examples/                # Terminal demos
+├── run_server.py            # MCP server (stdio)
+├── run_client.py            # Terminal menu for the agent
+├── run_api.py               # Chat API
+├── Dockerfile               # API image
+├── web/Dockerfile           # UI image
+├── docker-compose.yml
+├── .env.sample              # Placeholders only. Copy to .env.
+└── PRODUCTIONIZING.md       # What to do before this faces the public internet
+```
+
+## Run it with Docker
+
+This is the path to click around in a browser. You need Docker with Compose. You do not need Python or Node installed on the host.
+
+**1. Configure keys**
+
 ```bash
-git clone <repository-url>
-cd AIE7-MCP-Session
 cp .env.sample .env
 ```
 
-**2. Configure API Keys**
-Edit `.env` file:
-```bash
-OPENAI_API_KEY=your_openai_key_here     # Required
-TAVILY_API_KEY=your_tavily_key_here     # Required  
-UNSPLASH_ACCESS_KEY=your_key_here       # Optional
-GITHUB_TOKEN=ghp_your_token_here        # Optional
-```
+Edit `.env` if you have keys. The file is gitignored. Placeholder values are safe to leave in place: the app treats `your_...` as "not configured" and starts in local tool mode.
 
-**3. Install Dependencies**
-```bash
-uv sync    # Recommended
-# OR: pip install -r requirements.txt
-```
-
-**4. Verify Installation**
-```bash
-uv run tests/test_mcp_integration.py    # Test components
-uv run run_client.py                    # Interactive demo
-uv run run_server.py                    # Test server
-```
-
-## 🛠️ Available Tools
-
-| Tool | Description | Example Usage |
-|------|-------------|---------------|
-| `web_search` | Search the web via Tavily API | "What's the latest in AI?" |
-| `roll_dice` | Roll dice with D&D notation | "Roll 3d6 for character stats" |
-| `create_social_post` | Generate social media content | "Create a LinkedIn post about Python" |
-| `get_slide_image` | Find presentation images | "Get images for machine learning slides" |
-| `create_quote_card` | Generate inspirational quotes | "Make a quote card about innovation" |
-
-## 📝 Usage Examples
-
-### Basic MCP Server Usage
+**2. Start the stack**
 
 ```bash
-# Start the MCP server
-uv run run_server.py
-
-# In another terminal, test with a simple client
-uv run tests/test_server.py
+docker compose up --build
 ```
 
-### LangGraph Agent Integration
+**3. Open the chat**
 
-#### Step-by-Step Demo
+[http://localhost:3000](http://localhost:3000)
 
-**1. Start the Interactive Client**
+The API is on [http://localhost:8000](http://localhost:8000). Interactive docs live at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+**4. Prove the stack**
+
+In another terminal, from the repo root:
+
 ```bash
-uv run run_client.py
+./scripts/verify_docker.sh
 ```
 
-**2. Choose Demo Mode**
+That builds the images, waits until both health checks pass, rolls dice through the API, loads the chat page, calls the UI proxy, and runs pytest inside the API container. It forces `AGENT_MODE=local` so the check does not spend OpenAI credit.
+
+Stop the stack with `docker compose down`.
+
+### What the containers are doing
+
+- `api` runs `run_api.py` as a non-root user. On the first LangGraph chat it starts `python run_server.py` in the same container and talks MCP over stdio. The child inherits the container environment, including your API keys.
+- `web` serves the Next.js app. Server-side requests to `/backend/*` go to `http://api:8000`. Your browser only talks to port 3000, so there is no CORS puzzle for the UI.
+
+`AGENT_MODE` chooses the brain:
+
+| Value | Behavior |
+| --- | --- |
+| `auto` (default) | LangGraph when `OPENAI_API_KEY` looks real, otherwise the local router |
+| `local` | Always the local router |
+| `openai` | LangGraph only. Chat returns 503 until a real key is set |
+
+## Run it without Docker
+
+Python 3.13 or newer, [uv](https://docs.astral.sh/uv/), and Node 22.
+
+**1. Keys**
+
+```bash
+cp .env.sample .env
 ```
-🚀 LangGraph + MCP Integration Examples
-Choose what to run:
-1. Quick Examples        # Automated demonstrations
-2. Interactive Mode      # Chat with the agent
-3. Compare ReAct vs StateGraph  # See different agent patterns
 
-Enter choice (1-3): 1
+**2. API**
+
+```bash
+uv sync
+uv run python run_api.py
 ```
 
-**3. Watch the Agent Work**
-The agent will automatically demonstrate:
-- Rolling dice with natural language
-- Searching the web for current information
-- Creating social media posts with images
-- Finding presentation-ready images
-- Generating inspirational quote cards
+The API listens on port 8000.
 
-#### Code Examples
+**3. UI**
 
-**Basic Usage:**
+```bash
+cd web
+npm install
+npm run dev
+```
+
+`API_INTERNAL_URL` in `.env` defaults to `http://127.0.0.1:8000`, which is what the Next.js dev server proxies to. Open [http://localhost:3000](http://localhost:3000).
+
+Production mode for the UI, still on your machine:
+
+```bash
+cd web
+npm run build
+API_INTERNAL_URL=http://127.0.0.1:8000 npm run start
+```
+
+**4. Tests**
+
+```bash
+uv run pytest tests/ -v
+```
+
+Tests that call OpenAI are skipped unless `OPENAI_API_KEY` is a real key. Dice, the HTTP API, the phrase router, and a real stdio MCP session run without any keys.
+
+### The original terminal client
+
+Still there, still useful when you want the agent without a browser:
+
+```bash
+uv run run_server.py          # stdio MCP server, for Cursor or a client
+uv run run_client.py          # menu: examples, interactive chat, ReAct vs StateGraph
+uv run pytest tests/ -v
+```
+
+`run_client.py` needs a real `OPENAI_API_KEY`. The browser's local mode does not.
+
+## How the pieces are built
+
+**Tools.** Each tool is a function in `server/` with an `@mcp.tool()` decorator in `server/main.py`. FastMCP publishes them over stdio when you run `run_server.py`. Tavily and GitHub clients are created only when a call needs them, and placeholder keys from `.env.sample` are ignored, so importing the server does not crash a fresh clone.
+
+**Agent.** `MCPLangGraphAgent` in `client/langgraph_agent.py` builds a stdio connection, loads the tools through `langchain-mcp-adapters`, and wraps them in a ReAct agent and a StateGraph. `build_mcp_config()` is the one place that decides the command. Locally that is `uv run run_server.py`. In Docker it is `python run_server.py`, set with `MCP_COMMAND` and `MCP_ARGS`. The parent environment is forwarded on purpose: this version of the adapter would otherwise hand the child a process environment that only contains `PATH`, and the tools would not see your keys.
+
+**API.** `api/app.py` exposes:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Backend name, readiness, tool count. No secrets. |
+| GET | `/api/tools` | Names and descriptions for the sidebar |
+| POST | `/api/tools/call` | Run one tool with a JSON object of arguments |
+| POST | `/api/chat` | One user turn. Returns a session id, the reply, and tool traces |
+| GET | `/api/sessions/{id}` | Transcript |
+| DELETE | `/api/sessions/{id}` | Forget a transcript ("New chat") |
+
+Sessions live in memory inside one process. Restarting the API forgets them. That is called out in `PRODUCTIONIZING.md` because it is the wrong store for more than one replica.
+
+**UI.** `web/components/chat-app.tsx` is the page. It loads health and the tool list together, sends chat through `/backend/api/chat`, and can run a tool from the sidebar with raw JSON arguments. `web/app/backend/[...path]/route.ts` proxies those calls. The browser bundle does not contain the API hostname, so changing `API_INTERNAL_URL` does not require a rebuild.
+
+### Add a tool
+
+1. Write the function under `server/`.
+2. Register it in `server/main.py`:
+
 ```python
-from client.langgraph_agent import MCPLangGraphAgent
-
-# Create and initialize agent
-agent = MCPLangGraphAgent()
-await agent.initialize()
-
-# Simple tool usage
-result = await agent.chat("Roll 2d20")
-
-# Multi-tool coordination
-result = await agent.chat("Roll 2d20 and create a social media post about the results")
+@mcp.tool()
+def my_custom_tool(param: str) -> str:
+    """Say what the tool does. The agent reads this."""
+    return f"Processed: {param}"
 ```
 
-**Advanced Workflows:**
-```python
-# Complex multi-tool coordination
-result = await agent.chat(
-    "Search for AI news, create a LinkedIn post about it, and get a slide image"
-)
+3. Teach the local router in `api/routing.py` if the tool should work with no OpenAI key. The LangGraph agent picks up new tools on its next startup without a router change.
+4. Add a test in `tests/`.
+5. The sidebar lists whatever `list_tools()` returns, so the UI follows along.
 
-# StateGraph for complex workflows
-result = await agent.chat_with_state_graph(
-    "Research machine learning trends and prepare presentation materials"
-)
-```
+### Use it from Cursor
 
-## 📡 STDIO Transport Communication
-
-Our MCP Server App uses **STDIO transport** for seamless process-to-process communication between the LangGraph agent and FastMCP server.
-
-### 🔧 **1. Server Side - FastMCP Server**
-**Files: `server/main.py` and `run_server.py`**
-```python
-# server/main.py (line 48)
-if __name__ == "__main__":
-    mcp.run(transport="stdio")
-
-# run_server.py (line 20)
-main.mcp.run(transport="stdio")
-```
-- The **FastMCP server** runs with STDIO transport
-- This means it communicates via **standard input/output** rather than HTTP
-- Perfect for process-to-process communication
-
-### 🔌 **2. Client Side - MCP Configuration**
-**File: `client/langgraph_agent.py` (lines 55-61)**
-```python
-self.mcp_config = {
-    "my-mcp-server": {
-        "command": "uv",
-        "args": ["--directory", current_dir, "run", "run_server.py"],
-        "transport": "stdio",  # ← STDIO specified here
-    }
-}
-```
-- The **MultiServerMCPClient** is configured to use STDIO transport
-- It spawns the server process (`uv run run_server.py`)
-- Communicates via **stdin/stdout pipes**
-
-### 🌊 **3. How STDIO Transport Works**
-
-```
-┌─────────────────┐    STDIO     ┌─────────────────┐
-│  LangGraph      │◄────────────►│   FastMCP       │
-│  Agent          │   (pipes)    │   Server        │
-│  (Client)       │              │   (Process)     │
-└─────────────────┘              └─────────────────┘
-```
-
-**Process:**
-1. **Client** (LangGraph agent) starts the **server process** 
-2. **STDIO pipes** connect the two processes
-3. **JSON-RPC messages** flow over stdin/stdout
-4. Server responds to tool calls via the same pipes
-
-### 🎯 **Why STDIO?**
-- **Process isolation**: Server runs in separate process
-- **Clean communication**: No network ports or HTTP servers needed
-- **MCP standard**: Official MCP protocol transport method
-- **Development friendly**: Easy to debug and test locally
-
-The STDIO transport is the backbone that enables our LangGraph agent to seamlessly communicate with the FastMCP server!
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file with the following:
-
-```bash
-# REQUIRED: OpenAI API Key for LangGraph agent
-OPENAI_API_KEY=your_openai_api_key_here
-
-# REQUIRED: Tavily API Key for web search functionality
-TAVILY_API_KEY=your_tavily_api_key_here
-
-# OPTIONAL: Unsplash API Key for high-quality images
-# If not provided, the system will use Lorem Picsum as fallback
-UNSPLASH_ACCESS_KEY=your_unsplash_access_key_here
-
-# OPTIONAL: GitHub Personal Access Token for private repository access
-# Create at: https://github.com/settings/tokens
-# Scopes needed: repo (for private repos), public_repo (for public repos)
-GITHUB_TOKEN=ghp_your_github_personal_access_token_here
-
-# OPTIONAL: LangChain API Key for LangSmith tracing/monitoring
-# Only needed if you want to use LangSmith for debugging/monitoring
-LANGCHAIN_API_KEY=your_langchain_api_key_here
-```
-
-### 🔐 GitHub Token Setup (Optional)
-
-To access your **private repositories**, create a GitHub Personal Access Token:
-
-1. **Go to**: https://github.com/settings/tokens
-2. **Click**: "Generate new token" → "Generate new token (classic)"
-3. **Set scopes**:
-   - ✅ `repo` (for private repositories)
-   - ✅ `public_repo` (for public repositories)
-4. **Copy token** and add to `.env`:
-   ```bash
-   GITHUB_TOKEN=ghp_your_personal_access_token_here
-   ```
-
-**Without a token**: Only public repositories are accessible  
-**With a token**: Full access to your private and public repositories
-
-### MCP Configuration for Cursor
-
-To use this MCP server with Cursor, add to your `~/.cursor/mcp.json`:
+Add this to `~/.cursor/mcp.json` and fix the path:
 
 ```json
 {
   "mcpServers": {
     "mcp-server": {
       "command": "uv",
-      "args": ["--directory", "/absolute/path/to/AIE7-MCP-Session", "run", "run_server.py"]
+      "args": ["--directory", "/absolute/path/to/this/repo", "run", "run_server.py"]
     }
   }
 }
 ```
 
-## 🎮 Interactive Examples & Workflows
+Restart Cursor after saving. The chat UI and Cursor can both use the same server code. They are separate processes.
 
-### Workflow 1: Content Creation
-**Input:** "Create a motivational post about AI and include a dice roll for fun"
+### Call the agent from Python
 
-**Agent Process:**
-1. 🎲 Rolls dice using `roll_dice` tool
-2. 🎨 Creates social post using `create_social_post` tool  
-3. 🔄 Combines results into engaging content
+```python
+import asyncio
+from client.langgraph_agent import MCPLangGraphAgent
 
-**Expected Output:**
+async def main():
+    agent = MCPLangGraphAgent()
+    await agent.initialize()
+    print(await agent.chat("Roll 2d20 and tell me if that is a good omen"))
+    print(await agent.chat_with_state_graph(
+        "Research machine learning trends and prepare presentation materials"
+    ))
+    await agent.close()
+
+asyncio.run(main())
 ```
-🎲 Rolled: 18 (excellent!)
-📱 Social Post: "Feeling lucky today! Just rolled an 18 - time to tackle that AI project! 
-Innovation distinguishes between a leader and a follower. - Steve Jobs
-#AI #motivation #lucky18"
-```
 
-### Workflow 2: Research & Presentation
-**Input:** "Research machine learning trends and prepare a slide"
+`chat_detailed()` returns the reply plus the tool names, arguments, and results. The HTTP API uses that for the trace panel.
 
-**Agent Process:**
-1. 🔍 Searches web using `web_search` tool
-2. 🖼️ Finds presentation image using `get_slide_image` tool
-3. 📊 Summarizes findings for presentation
+## Configuration
 
-### Workflow 3: Inspiration Generation  
-**Input:** "I need motivation for my startup"
-
-**Agent Process:**
-1. 💬 Creates quote card using `create_quote_card` tool
-2. 🎨 Generates custom inspirational content
-3. 🎯 Provides actionable motivation
-
-## 🧪 Testing
-
-### Run All Tests with Pytest
+`.env.sample` lists every variable. The ones that matter day to day:
 
 ```bash
-# Run all tests (recommended)
+OPENAI_API_KEY=your_openai_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
+UNSPLASH_ACCESS_KEY=your_unsplash_access_key_here
+GITHUB_TOKEN=ghp_your_github_personal_access_token_here
+AGENT_MODE=auto
+OPENAI_MODEL=gpt-4o-mini
+API_INTERNAL_URL=http://127.0.0.1:8000
+```
+
+GitHub token scopes, if you create one: `repo` for private repositories, `public_repo` for public ones. A missing token still allows public reads, within GitHub's unauthenticated rate limit.
+
+Do not commit `.env`. The sample file is the only env file in git, and its values are placeholders.
+
+## Tests
+
+```bash
 uv run pytest tests/ -v
-
-# Run specific test file
-uv run pytest tests/test_server.py -v
-uv run pytest tests/test_mcp_integration.py -v
-
-# Run specific test method
-uv run pytest tests/test_server.py::TestMCPServer::test_dice_rolling_tool -v
-
-# Run with coverage (if available)
-uv run pytest tests/ --cov=server --cov-report=term-missing
 ```
 
-### Test Coverage
-Our comprehensive test suite includes:
-- **7 tests** in `test_server.py` - Server functionality, tool registration, and GitHub tools
-- **3 tests** in `test_mcp_integration.py` - LangGraph integration tests  
-- **Total: 10 tests** covering MCP server, tools, GitHub API integration, and client integration
+The suite covers:
 
-### Manual Testing
+- Tool registration, dice notation, GitHub responses, and a missing Tavily key (`tests/test_server.py`)
+- The phrase router (`tests/test_local_routing.py`)
+- HTTP chat, sessions, direct tool calls, and the OpenAI-key fallback (`tests/test_api.py`)
+- stdio command construction and tool-trace parsing (`tests/test_agent_config.py`)
+- A live stdio child that lists tools and rolls a die (`tests/test_stdio_mcp.py`)
+- LangGraph initialization, skipped unless an OpenAI key is present (`tests/test_mcp_integration.py`)
 
-```bash
-# Test server startup
-uv run run_server.py
+`./scripts/verify_docker.sh` repeats the pytest run inside the API image after the HTTP checks.
 
-# Test client integration
-uv run run_client.py
+## Troubleshooting
 
-# Test specific functionality
-uv run examples/example_langgraph_usage.py
+**The chat page says the API is not reachable.**
+The Next.js process proxies to `API_INTERNAL_URL`. For `npm run dev` that should be `http://127.0.0.1:8000` and `run_api.py` should be running. In Compose it is `http://api:8000` and it is set for you. Check `docker compose ps` and `docker compose logs api`.
 
-# Legacy test execution (backwards compatible)
-uv run tests/test_server.py
-```
+**Every reply says local mode.**
+`OPENAI_API_KEY` is missing or still the placeholder from `.env.sample`. Put a real key in `.env` and recreate the container (`docker compose up --build`) so the API process sees it. `GET /health` shows `"backend": "openai"` when the agent path is armed. The first real chat is what opens the connection.
 
-## 🛠️ Development
+**`AGENT_MODE=openai` and chat returns 503.**
+That mode refuses to fall back. Either set a real key or switch the mode to `auto` or `local`.
 
-### Adding New Server Tools
+**Web search says it is unavailable.**
+Expected without `TAVILY_API_KEY`. Dice, quotes, slides, and public GitHub search do not need that key. Quotes fall back to a built-in list if the quote service is down.
 
-1. Implement your tool in the `server/` directory
-2. Register the tool in `server/main.py` using `@mcp.tool()` decorator
-3. Add tests in `tests/`
-4. Update documentation
+**Docker says the port is in use.**
+Something else is bound to 3000 or 8000. Stop it, or change the host side of the `ports:` mapping in `docker-compose.yml` (`"3001:3000"` leaves the container port alone).
 
-Example:
-```python
-@mcp.tool()
-def my_custom_tool(param: str) -> str:
-    """Description of what your tool does"""
-    return f"Processed: {param}"
-```
+**Cursor does not see the server.**
+Use an absolute path in `mcp.json`, confirm `uv` is on the PATH Cursor inherits, and reload the window. The server speaks stdio, so it will look idle in a terminal until a client connects.
 
-### Adding New Client Features
+## Where this should go next
 
-1. Implement features in the `client/` directory
-2. Add examples in `examples/`
-3. Add integration tests in `tests/`
-4. Update documentation
+The Compose file is a local workshop, not a deployment. Sessions are in memory, the tool runner has no auth, and the MCP server is a child process of the API. [PRODUCTIONIZING.md](PRODUCTIONIZING.md) is the concrete list: CI, auth, hosting, observability, and how to scale the agent and the tools apart.
 
-### Entry Points
+## License
 
-```bash
-# Server entry points
-uv run server/main.py          # Direct server execution
-uv run run_server.py           # Convenient wrapper
-
-# Client entry points  
-uv run examples/example_langgraph_usage.py  # Direct examples
-uv run run_client.py           # Convenient wrapper
-
-# Testing entry points
-uv run tests/test_mcp_integration.py        # Integration tests
-pytest tests/                               # All tests
-```
-
-## 🎮 Live Demo Walkthrough
-
-### Quick 5-Minute Demo
-
-**Step 1: Setup (1 minute)**
-```bash
-# Clone and setup
-git clone <repository-url>
-cd AIE7-MCP-Session
-cp .env.sample .env
-# Add your OPENAI_API_KEY and TAVILY_API_KEY to .env
-```
-
-**Step 2: Install Dependencies (1 minute)**
-```bash
-uv sync
-```
-
-**Step 3: Test MCP Server (1 minute)**
-```bash
-# Test server works
-uv run run_server.py &
-sleep 2
-pkill -f run_server.py
-echo "✅ Server working!"
-```
-
-**Step 4: Run Interactive Demo (2 minutes)**
-```bash
-uv run run_client.py
-# Choose option 1 for automated examples
-# Watch the agent coordinate multiple tools
-```
-
-### Expected Demo Output
-
-```
-🎯 Quick LangGraph + MCP Examples
-🔹 Testing: Roll a d20 for me and tell me what it means for my luck today
-🔌 Connecting to MCP server...
-✅ Connected! Loaded 5 tools
-🤖 Agent: You rolled a 19 on a d20! That's excellent luck - great success awaits!
-
-🔹 Testing: Search for recent AI news and create a professional social media post
-🤖 Agent: Here's a professional LinkedIn post about recent AI developments:
-💡 Reflecting on Recent AI Developments...
-[Generated post with image and hashtags]
-```
-
-## 🎯 Use Cases
-
-### 🎲 Gaming & Entertainment
-- Generate character stats with dice rolls
-- Create social posts about gaming sessions
-- Find fantasy-themed images for campaigns
-
-### 📈 Business & Marketing  
-- Research industry trends
-- Create professional social media content
-- Generate presentation materials
-- Find motivational quotes for teams
-
-### 🎓 Education & Training
-- Create educational content with images
-- Generate quiz questions with dice randomization
-- Research topics and create summaries
-- Motivational content for students
-
-### 💼 Content Creation
-- Automated social media campaigns
-- Blog post research and imagery
-- Quote cards for inspiration
-
-### 🐙 Developer Workflow
-- Search GitHub repositories for inspiration
-- Browse repository files and structure
-- Read documentation and code examples
-- Analyze open-source project patterns
-- Presentation slide generation
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**Error: "OpenAI API key not found"**
-```bash
-# Solution: Set your OpenAI API key
-echo "OPENAI_API_KEY=your_key_here" >> .env
-```
-
-**Error: "MCP server connection failed"**
-```bash
-# Solution: Check server is working
-uv run run_server.py
-```
-
-**Error: "No tools loaded"**
-```bash
-# Solution: Ensure MCP server tools are properly decorated
-# Check server/main.py has @mcp.tool() decorators
-```
-
-**Cursor MCP Issues:**
-1. Restart Cursor after updating `mcp.json`
-2. Check Cursor's Developer Tools → Console for MCP errors
-3. Ensure absolute paths in MCP configuration
-4. Verify `.env` file has required API keys
-
-## 🚀 Advanced Usage
-
-### Custom Tool Integration
-
-```python
-# Add your own MCP tools to server/main.py
-@mcp.tool()
-def my_custom_tool(param: str) -> str:
-    """Description of what your tool does"""
-    return f"Processed: {param}"
-
-# Agent will automatically detect and use new tools
-```
-
-### Workflow Customization
-
-```python
-# Create custom StateGraph workflows
-from langgraph.graph import StateGraph, MessagesState
-
-def custom_workflow():
-    builder = StateGraph(MessagesState)
-    # Add your custom nodes and edges
-    return builder.compile()
-```
-
-### Language Model Options
-
-```python
-# Different OpenAI models
-agent = MCPLangGraphAgent()
-agent.llm = ChatOpenAI(
-    model="gpt-4",           # More powerful
-    # model="gpt-4o-mini",   # Cost efficient (default)
-    temperature=0.7,         # Creativity level
-)
-```
-
-## 🤝 Integration with Other Systems
-
-This setup follows the patterns from the [langchain-mcp-adapters](https://github.com/langchain-ai/langchain-mcp-adapters) repository, making it compatible with:
-
-- **LangGraph API Server**: Deploy as production service
-- **Multiple MCP Servers**: Connect to multiple tool sources
-- **Streamable HTTP**: Use HTTP transport for web deployment
-- **Custom Headers**: Add authentication and custom headers
-
-## 📈 Benefits of This Architecture
-
-### ✅ **Clear Separation of Concerns**
-- Server logic isolated from client logic
-- Tests separated from implementation
-- Examples clearly organized
-
-### ✅ **Easy Development**
-- Add new tools without affecting client code
-- Test components independently
-- Clear import paths and dependencies
-
-### ✅ **Production Ready**
-- Server can be deployed independently
-- Client can connect to remote servers
-- Scalable architecture for multiple clients
-
-### ✅ **Maintainable**
-- Logical file organization
-- Clear entry points for different use cases
-- Comprehensive testing structure
-
-## 📚 Next Steps
-
-1. **Explore Examples**: Run `uv run run_client.py` to see all capabilities
-2. **Add Custom Tools**: Extend `server/main.py` with your own MCP tools
-3. **Create Workflows**: Build complex StateGraph workflows for your use cases
-4. **Deploy**: Consider deploying with LangGraph API server for production
-5. **Integrate**: Use with Cursor or other MCP-compatible AI assistants
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read the contributing guidelines and submit pull requests for any improvements.
-
----
-
-**Ready to build amazing AI workflows?** Start with `uv run run_client.py` and explore the interactive examples! 🎉
+This project has been described as MIT, and there is no `LICENSE` file in the tree yet. Add one before you publish a package or image.

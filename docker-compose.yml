@@ -1,0 +1,66 @@
+# Local stack: chat UI on :3000 and the FastAPI agent on :8000.
+#
+# Compose reads a gitignored .env file in this directory and interpolates the
+# variables below. Copy .env.sample to .env and put real keys there. Placeholder
+# values keep the UI in local tool mode, which can roll dice without OpenAI.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-mcp-server-app}
+      AGENT_MODE: ${AGENT_MODE:-auto}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      MCP_COMMAND: python
+      MCP_ARGS: run_server.py
+      CORS_ORIGINS: http://localhost:3000
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
