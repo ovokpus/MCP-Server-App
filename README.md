@@ -6,6 +6,17 @@ A Model Context Protocol server, a LangGraph agent that can call it, and a brows
 
 Roll dice, search the web, draft a social post, pull a slide image, mint a quote card, or browse public GitHub repos. With an OpenAI key, a ReAct agent decides which tools to call. Without one, the same UI still runs the tools it can recognize (dice works immediately).
 
+## Demo
+
+Start the stack with `docker compose up --build`, then open [http://localhost:3000](http://localhost:3000). This is the walkthrough, in order:
+
+1. The chat page lists every MCP tool in the sidebar and offers a few prompts. The status pill says **Local tools** until `OPENAI_API_KEY` is a real key.
+2. Choose **Roll 2d6** and press **Send**. The reply includes the roll (`ROLLS: … -> RETURNS: …`). Open the **Tool: roll_dice** trace to see the notation and the same result.
+3. In the sidebar, **Run tool** calls `roll_dice` with the JSON arguments and prints the roll under the form. No model is involved.
+4. The API reference is at [http://localhost:8000/docs](http://localhost:8000/docs). `POST /api/chat` is the route the page uses.
+
+`./scripts/verify_docker.sh` checks that same dice path without opening a browser.
+
 ## Architecture
 
 Two processes, one conversation.
