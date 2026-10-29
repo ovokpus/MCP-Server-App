@@ -112,8 +112,12 @@ class TestMCPServer:
         _, metadata = result
         assert 'result' in metadata, "No 'result' key in metadata for GitHub search"
         
-        # Check that the result contains expected GitHub search elements
+        # Check that the result contains expected GitHub search elements.
+        # Unauthenticated search is limited to a handful of calls per minute,
+        # so a 403 from GitHub is a skipped test rather than a product failure.
         search_result = metadata['result']
+        if "rate limit" in search_result.lower():
+            pytest.skip("GitHub search rate limit reached")
         assert "GitHub Repository Search Results" in search_result, "Missing search results header"
         assert "Stars:" in search_result, "Missing star count in results"
     
@@ -129,10 +133,31 @@ class TestMCPServer:
         _, metadata = result
         assert 'result' in metadata, "No 'result' key in metadata for GitHub repo info"
         
-        # Check that the result contains expected repository info
+        # Check that the result contains expected repository info.
         repo_info = metadata['result']
+        if "rate limit" in repo_info.lower():
+            pytest.skip("GitHub API rate limit reached")
         assert "Repository Information" in repo_info, "Missing repo info header"
         assert "octocat/Hello-World" in repo_info, "Missing repository name"
+
+    @pytest.mark.asyncio
+    async def test_web_search_reports_missing_key(self, monkeypatch):
+        """The server must import and answer even when Tavily is not configured."""
+        monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+        result = await server_main.mcp.call_tool("web_search", {"query": "model context protocol"})
+        _, metadata = result
+        text = metadata["result"]
+        assert "unavailable" in text.lower()
+        assert "TAVILY_API_KEY" in text
+
+    def test_placeholder_secrets_are_ignored(self, monkeypatch):
+        """Sample env values must not be sent to GitHub or Tavily as real credentials."""
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_your_github_personal_access_token_here")
+        assert server_main._optional_secret("GITHUB_TOKEN") is None
+        monkeypatch.setenv("TAVILY_API_KEY", "your_tavily_api_key_here")
+        assert server_main._optional_secret("TAVILY_API_KEY") is None
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_example_token_value")
+        assert server_main._optional_secret("GITHUB_TOKEN") == "ghp_example_token_value"
 
 
 # Backwards compatibility: keep the main function for direct execution

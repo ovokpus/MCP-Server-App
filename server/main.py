@@ -15,15 +15,44 @@ except ImportError:
 
 load_dotenv()
 
+
+def _optional_secret(name: str) -> str | None:
+    """Return an env var only when it looks like a real credential.
+
+    ``.env.sample`` ships placeholder values such as ``your_...`` and
+    ``ghp_your_...``. Passing those through would make GitHub and Tavily
+    reject otherwise public requests, and Tavily raises at construction
+    time when the key is missing entirely.
+    """
+    value = os.getenv(name, "").strip()
+    if not value:
+        return None
+    lowered = value.lower()
+    if lowered in {"none", "null", "changeme"} or "your_" in lowered:
+        return None
+    return value
+
+
 mcp = FastMCP("mcp-server")
-client = TavilyClient(os.getenv("TAVILY_API_KEY"))
 content_creator = SocialContentCreator()
-github_tool = GitHubTool(github_token=os.getenv("GITHUB_TOKEN"))
+github_tool = GitHubTool(github_token=_optional_secret("GITHUB_TOKEN"))
+
 
 @mcp.tool()
 def web_search(query: str) -> str:
     """Search the web for information about the given query"""
-    search_results = client.get_search_context(query=query)
+    # Construct the client per call so importing this module (and therefore
+    # every other tool) works in local Docker when no Tavily key is configured.
+    key = _optional_secret("TAVILY_API_KEY")
+    if not key:
+        return (
+            "Web search is unavailable because TAVILY_API_KEY is not set. "
+            "Add a Tavily key to the environment and try again."
+        )
+    try:
+        search_results = TavilyClient(key).get_search_context(query=query)
+    except Exception as exc:
+        return f"Web search failed: {exc}"
     return search_results
 
 @mcp.tool()
