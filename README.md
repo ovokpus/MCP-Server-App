@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/banner.jpg" alt="Brass hub connector with braided cables fanning out to many plugs" width="100%"></p>
+
 # 🚀 MCP Server App
 
 ## <h1 align="center">Complete MCP Server with LangGraph Agent Integration</h1>
