@@ -6,6 +6,10 @@ A Model Context Protocol server, a LangGraph agent that can call it, and a brows
 
 Roll dice, search the web, draft a social post, pull a slide image, mint a quote card, or browse public GitHub repos. With an OpenAI key, a ReAct agent decides which tools to call. Without one, the same UI still runs the tools it can recognize (dice works immediately).
 
+## Business case
+
+Every AI assistant a company builds needs the same tools, and wiring them into each assistant separately repeats the work. This repo puts those tools behind one Model Context Protocol server and shows a LangGraph agent and web chat using them, so a tool is written once and reused everywhere. The payoff grows with the number of assistants. [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md) sets out where that pays and where it doesn't.
+
 ## Demo
 
 Start the stack with `docker compose up --build`, then open [http://localhost:3000](http://localhost:3000). This is the walkthrough, in order:
