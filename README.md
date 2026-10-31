@@ -1,6 +1,6 @@
-<p align="center"><img src="assets/banner.jpg" alt="Brass hub connector with braided cables fanning out to many plugs" width="100%"></p>
-
 # MCP Server App
+
+<p align="center"><img src="assets/banner.jpg" alt="Brass hub connector with braided cables fanning out to many plugs" width="100%"></p>
 
 A Model Context Protocol server, a LangGraph agent that can call it, and a browser chat so you can use both without a terminal.
 
